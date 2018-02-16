@@ -1,0 +1,14 @@
+{
+  "name": "git-lfs-lambda-server",
+  "version": "0.0.1",
+  "description": "Lambda implementations of Git LFS server spec",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "Ken George <ken@whatever.email>",
+  "license": "MIT",
+  "dependencies": {
+    "kpromise": "^1.0.1"
+  }
+}

@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless AWS implementation of the GIT-LFS server spec.
+
+Parameters:
+  bucketName:
+    Type: String
+
+Resources:
+  artifactsBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      AccessControl: Private
+      BucketName: !Ref bucketName
+  batch:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'cloudrepo-batch'
+      Runtime: nodejs6.10
+      Timeout: 60
+      Handler: batch.handler
+      CodeUri: .
+      Environment:
+        Variables:
+          GLL_ARTIFACTS_BUCKET: !Ref artifactsBucket
+      Policies:
+        - S3CrudPolicy:
+          BucketName: !Ref artifactsBucket
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /cloudrepo.git/info/lfs/objects/batch
+            Method: POST
+  verifyLocks:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'cloudrepo-verifyLocks'
+      Runtime: nodejs6.10
+      Timeout: 60
+      Handler: verifyLocks.handler
+      CodeUri: .
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /cloudrepo.git/info/lfs/locks/verify
+            Method: POST
+  listLocks:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'cloudrepo-listLocks'
+      Runtime: nodejs6.10
+      Timeout: 60
+      Handler: listLocks.handler
+      CodeUri: .
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /cloudrepo.git/info/lfs/locks
+            Method: GET
+  createLock:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'cloudrepo-createLock'
+      Runtime: nodejs6.10
+      Timeout: 60
+      Handler: createLock.handler
+      CodeUri: .
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /cloudrepo.git/info/lfs/locks
+            Method: POST
+  deleteLock:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'cloudrepo-deleteLock'
+      Runtime: nodejs6.10
+      Timeout: 60
+      Handler: deleteLock.handler
+      CodeUri: .
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /cloudrepo.git/info/lfs/locks/{id}/unlock
+            Method: POST

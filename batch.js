@@ -1,7 +1,6 @@
 'use strict';
 
-const toLambdaResponse = require('lambdaResponse.js').toLambdaResponse;
-
+const toLambdaResponse = require('./common/lambdaResponse').toLambdaResponse;
 const K = require('kpromise');
 const log = K.log;
 const forEach = K.forEach;
@@ -10,7 +9,7 @@ const get = K.get;
 const startWith = K.startWith;
 
 const TRANSFER_TYPE = "basic";
-const S3Datastore = require('common/S3Datastore.js');
+const S3Datastore = require('./common/S3Datastore.js');
 const datastore = new S3Datastore(process.env.GLL_ARTIFACTS_BUCKET);
 
 

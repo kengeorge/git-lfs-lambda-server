@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
-const Datastore = require('common/Datastore.js');
+const Datastore = require('./Datastore.js');
 
 class S3Datastore extends Datastore {
 

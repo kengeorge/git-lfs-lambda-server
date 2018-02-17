@@ -19,3 +19,4 @@ function toLambdaResponse(statusCode) {
 }
 
 exports.toLambdaResponse = toLambdaResponse;
+exports.makeProxyResponse = makeProxyResponse;

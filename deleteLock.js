@@ -1,6 +1,6 @@
 'use strict';
 
-const m = require('./common/messages.js');
+const m = require('./src/common/messages.js');
 const respond = require('./common/lambdaResponse.js');
 
 

@@ -5,6 +5,10 @@
   "scripts": {
     "test": "jest"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://source.developers.google.com/p/ken-01/r/git-lfs-lambda-server"
+  },
   "keywords": [],
   "author": "Ken George <ken@whatever.email>",
   "license": "MIT",

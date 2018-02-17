@@ -1,15 +1,12 @@
+jest.mock('../common/Datastore'); //oddly enough, this needs to be first for wallaby to work right.
+
 const BatchProcessor = require('../BatchProcessor');
 const Datastore = require('../common/Datastore');
 
 const TRANSFER_TYPE = "TEST_TRANSFER_TYPE";
 
-jest.mock('../common/Datastore');
 
 describe('BatchProcessor', () => {
-
-    beforeEach(() => {
-        Datastore.mockClear();
-    });
 
     beforeAll(() => {
         Datastore.mockImplementation(() => {
@@ -24,10 +21,15 @@ describe('BatchProcessor', () => {
         });
     });
 
+    let processor = null;
+    beforeEach(() => {
+        Datastore.mockClear();
+        processor = new BatchProcessor(new Datastore(), TRANSFER_TYPE);
+    });
+
+
     it('Should process an upload request.', async() => {
         const given = [{oid: "testoid", size: 5}];
-
-        const processor = new BatchProcessor(new Datastore(), TRANSFER_TYPE);
 
         let actual = await processor.processUpload(given);
 
@@ -42,8 +44,6 @@ describe('BatchProcessor', () => {
             {oid: "testoid2", size: 5},
         ];
 
-        const processor = new BatchProcessor(new Datastore(), TRANSFER_TYPE);
-
         let actual = await processor.processUpload(given);
 
         expect.assertions(3);
@@ -54,8 +54,6 @@ describe('BatchProcessor', () => {
 
     it('Should process a download request.', async() => {
         const given = [{oid: "testoid", size: 5}];
-
-        const processor = new BatchProcessor(new Datastore(), TRANSFER_TYPE);
 
         let actual = await processor.processDownload(given);
 
@@ -69,8 +67,6 @@ describe('BatchProcessor', () => {
             {oid: "testoid1", size: 5},
             {oid: "testoid2", size: 10}
         ];
-
-        const processor = new BatchProcessor(new Datastore(), TRANSFER_TYPE);
 
         let actual = await processor.processDownload(given);
 

@@ -12,7 +12,7 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Ref bucketName
-  batch:
+    batch:
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: 'cloudrepo-batch'

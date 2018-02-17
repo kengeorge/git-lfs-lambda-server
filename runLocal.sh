@@ -8,4 +8,4 @@ runDir="."
 
 params="bucketName=gll-server-dev-artifacts"
 
-sam local start-api --template $runDir/$templateFile --parameter-values "$params" --env-vars $runDir/$envFile
+GLL_ARTIFACTS_BUCKET=cloudrepo-git-lfs-lambda sam local start-api --template $runDir/$templateFile --parameter-values "$params" --env-vars $runDir/$envFile

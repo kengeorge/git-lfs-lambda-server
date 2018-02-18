@@ -1,8 +1,6 @@
 "use strict";
 
 const TRANSFER_TYPE = "basic";
-const K = require('kpromise');
-const log = K.log;
 const toLambdaResponse = require('./common/lambdaResponse').toLambdaResponse;
 const makeProxyResponse = require('./common/lambdaResponse').makeProxyResponse;
 

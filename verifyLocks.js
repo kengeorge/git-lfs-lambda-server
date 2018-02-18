@@ -18,9 +18,9 @@ exports.handler = function(event, context, callback) {
     log("^^^^^^^^^^^^^^^^ REQUEST");
 
     return processor.process(request)
+        .then(toLambdaResponse(200))
         .then(K.print("RESPONSE vvvvvvvvvvvvvvvv"))
         .then(K.peek)
         .then(K.print("^^^^^^^^^^^^^^^^ RESPONSE"))
-        .then(toLambdaResponse(200))
         .then((res) => callback(null, res))
 };

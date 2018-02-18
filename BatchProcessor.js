@@ -25,12 +25,12 @@ class BatchProcessor {
 
     process(requestObjects, isUpload) {
         return startWith(requestObjects)
-            .then(forEach(this.objectRequestToObjectResponse))
+            .then(forEach(BatchProcessor.objectRequestToObjectResponse))
             .then(forEach(decorate('actions', (obj) => {
                 return startWith(obj)
                     .then(get('oid'))
                     .then(isUpload ? this.datastore.getUploadUrl : this.datastore.getDownloadUrl)
-                    .then(this.toAction)
+                    .then(BatchProcessor.toAction)
                     .then((action) => isUpload ? {upload: action} : {download: action});
             })))
             .then(this.toBatchResponseFormat)

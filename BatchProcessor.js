@@ -12,9 +12,6 @@ class BatchProcessor {
         this.datastore = datastore;
         this.transferType = transferType;
 
-        //this.processUpload = this.processUpload.bind(this);
-        //this.processDownload = this.processDownload.bind(this);
-        //this.process = this.process.bind(this);
         this.toBatchResponseFormat = this.toBatchResponseFormat.bind(this);
     }
 
@@ -40,7 +37,7 @@ class BatchProcessor {
             ;
     }
 
-    objectRequestToObjectResponse(item) {
+    static objectRequestToObjectResponse(item) {
         return {
             oid: item.oid,
             size: item.size,
@@ -49,7 +46,7 @@ class BatchProcessor {
         };
     }
 
-    toAction(url) {
+    static toAction(url) {
         return {
             href: url,
             expires_in: 900

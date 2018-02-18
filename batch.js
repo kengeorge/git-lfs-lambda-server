@@ -12,22 +12,17 @@ const BatchProcessor = require('BatchProcessor.js');
 const processor = new BatchProcessor(datastore, TRANSFER_TYPE);
 
 exports.handler = function(event, context, callback) {
-    log(event.body);
-    log(process.env);
+
     let request = JSON.parse(event.body);
+
     if(request.transfer && !request.transfer.includes(TRANSFER_TYPE)) {
         let res = makeProxyResponse(422, {"Error": "Unsupported transfer type"});
-        callback(res, null);
+        return callback(res, null);
     }
-    log("REQUEST vvvvvvvvvvvvvvvv");
-    log(request);
-    log("^^^^^^^^^^^^^^^^ REQUEST");
 
     let isUpload = request.operation === "upload";
+    return callback("ERR", null);
     return processor.process(request.objects, isUpload)
-        .then(K.print("RESPONSE vvvvvvvvvvvvvvvv"))
-        .then(K.peek)
-        .then(K.print("^^^^^^^^^^^^^^^^ RESPONSE"))
         .then(toLambdaResponse(200))
         .then((res) => callback(null, res))
         ;

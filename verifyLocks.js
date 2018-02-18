@@ -1,10 +1,11 @@
-'use strict';
+"use strict";
 
-const toLambdaResponse = require('./common/lambdaResponse').toLambdaResponse;
 const K = require('kpromise');
 const log = K.log;
-const startWith = K.startWith;
-const get = K.get;
+
+const VerifyLocksProcessor = require('VerifyLocksProcessor');
+const processor = new VerifyLocksProcessor();
+const toLambdaResponse = require('./common/lambdaResponse').toLambdaResponse;
 
 exports.handler = function(event, context, callback) {
     log("CONTEXT vvvvvvvvvvvvvvvv");
@@ -16,8 +17,7 @@ exports.handler = function(event, context, callback) {
     log(request);
     log("^^^^^^^^^^^^^^^^ REQUEST");
 
-    return startWith(request)
-        .then(get('path'))
+    return processor.process(request)
         .then(K.print("RESPONSE vvvvvvvvvvvvvvvv"))
         .then(K.peek)
         .then(K.print("^^^^^^^^^^^^^^^^ RESPONSE"))

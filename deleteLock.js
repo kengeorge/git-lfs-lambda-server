@@ -1,12 +1,13 @@
-'use strict';
+"use strict";
 
-const m = require('./src/common/messages.js');
-const respond = require('./common/lambdaResponse.js');
-
+const Locks = require('common/Locks');
+const locks = new Locks();
+const toLambdaResponse = require('./common/lambdaResponse').toLambdaResponse;
 
 exports.handler = function(event, context, callback) {
-    var response = {
-        message:  "Git LFS Lambda api v: " + m.currentVersion
-    };
-    callback(null, respond(200, response));
+    let request = JSON.parse(event.body);
+
+    return locks.delete(request)
+        .then(toLambdaResponse(200))
+        .then((res) => callback(null, res))
 };

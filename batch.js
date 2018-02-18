@@ -21,7 +21,6 @@ exports.handler = function(event, context, callback) {
     let isUpload = request.operation === "upload";
     return processor.process(request.objects, isUpload)
         .then(toLambdaResponse(200))
-        .then((res) => callback(null, res))
-    ;
+        .then((res) => callback(null, res));
 };
 

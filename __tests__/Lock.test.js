@@ -13,7 +13,7 @@ describe('Lock', () => {
         expect.assertions(4);
         expect(actual.id).toBe(givenId);
         expect(actual.path).toBe(givenPath);
-        expect(actual.lockTime).toBe(givenTime);
+        expect(actual.lockedAt).toBe(givenTime);
         expect(actual.owner).toBe(givenOwner);
     });
 });

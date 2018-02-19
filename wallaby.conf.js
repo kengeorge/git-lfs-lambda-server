@@ -3,6 +3,7 @@ module.exports = function() {
     return {
         files: [
             '**/*.js',
+            '!node_modules/**/*',
             '!**/__tests__/**/*.js'
         ],
 

@@ -1,6 +1,6 @@
 "use strict";
 const K = require('kpromise');
-const startWith = K.startWith;
+const promiseFor = K.startWith;
 
 const Lock = require('./Lock');
 const tempLock = new Lock(
@@ -12,19 +12,25 @@ const tempLock = new Lock(
 
 class Locks {
     list() {
-        return startWith(Locks.toListLocksResponse())
+        return promiseFor(Locks.toListLocksResponse())
     }
 
     verify() {
-        return startWith(Locks.toVerifyLocksResponse())
+        return promiseFor(Locks.toVerifyLocksResponse())
     }
 
-    create() {
-        return startWith(Locks.toLockResponse(tempLock));
+    create(pathToFile) {
+        return promiseFor(new Lock(
+            "fake id", //TODO
+            pathToFile,
+            new Date().toISOString(),
+            {name: "Fake Owner"} //TODO
+        ));
+        return promiseFor(Locks.toLockResponse(tempLock));
     }
 
     delete() {
-        return startWith(Locks.toLockResponse(tempLock));
+        return promiseFor(Locks.toLockResponse(tempLock));
     }
 
     static toLockResponse(lock) {
@@ -35,16 +41,16 @@ class Locks {
 
     static toVerifyLocksResponse() {
         return {
-            "ours": [],
-            "theirs": [],
-            //"next_cursor": "optional next ID",
+            ours: [],
+            theirs: [],
+            //next_cursor: "optional next ID",
         }
     }
 
     static toListLocksResponse() {
         return {
-            "locks": [],
-            //"next_cursor": "optional next ID",
+            locks: [],
+            //next_cursor: "optional next ID",
         };
     }
 }

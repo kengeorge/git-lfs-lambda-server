@@ -1,43 +1,92 @@
 const AWS = require('aws-sdk-mock');
-
-AWS.mock('S3', 'getSignedUrl', function(operation, params, callback) {
-    console.log("TEST CALL WITH :" + operation);
-    callback(null, makeUrl(operation, params.Bucket, params.Key));
-});
-
 const S3Datastore = require('../common/S3Datastore');
+const TEST_BUCKET_NAME = "TEST_BUCKET_NAME";
 
 function makeUrl(operation, bucket, key) {
     return `${operation}_URL_FOR_${bucket}_${key}`;
 }
 
-
 describe('S3Datastore', () => {
-
-    const TEST_BUCKET_NAME = "TEST_BUCKET_NAME";
-
-    beforeAll(() => {
-    });
 
     let datastore = null;
     beforeEach(() => {
         datastore = new S3Datastore(TEST_BUCKET_NAME);
     });
 
-    it('Should produce a signed upload url', async() => {
-        const givenKey = "UPLOAD_KEY";
+    describe('Successful responses', () => {
+        beforeAll(() => {
+            AWS.restore();
+            AWS.mock('S3', 'getSignedUrl', (operation, params, callback) => {
+                return callback(null, makeUrl(operation, params.Bucket, params.Key));
+            });
 
-        const expected = makeUrl("putObject", TEST_BUCKET_NAME, givenKey);
+            AWS.mock('S3', 'headObject', (params, callback) => {
+                return callback(null, "mockHeadResponse");
+            });
+        });
 
-        await expect(datastore.getUploadUrl(givenKey)).resolves.toBe(expected);
+        let datastore = null;
+        beforeEach(() => {
+            datastore = new S3Datastore(TEST_BUCKET_NAME);
+        });
+
+        it('Should produce a signed upload url', () => {
+            const givenKey = "UPLOAD_KEY";
+
+            const expected = makeUrl("putObject", TEST_BUCKET_NAME, givenKey);
+
+            expect.assertions(1);
+            expect(datastore.getUploadUrl(givenKey)).resolves.toBe(expected);
+        });
+
+        it('Should produce a signed download url', () => {
+            const givenKey = "DOWNLOAD_KEY";
+
+            const expected = makeUrl("getObject", TEST_BUCKET_NAME, "DOWNLOAD_KEY");
+
+            expect.assertions(1);
+            expect(datastore.getDownloadUrl(givenKey)).resolves.toBe(expected);
+        });
+
+        it('Should return key if exists when checking for exists', () => {
+            expect.assertions(1);
+            expect(datastore.exists("VALID_KEY")).resolves.toBe("VALID_KEY");
+        });
+
+        it('Should return null if key exists when checking for not exists', () => {
+            expect.assertions(1);
+            expect(datastore.doesNotExist("INVALID_KEY")).resolves.toBeNull();
+        });
     });
 
-    it('Should produce a signed download url', async() => {
-        const givenKey = "DOWNLOAD_KEY";
+    describe('Error responses', () => {
 
-        const expected = makeUrl("getObject", TEST_BUCKET_NAME, givenKey);
+        beforeAll(() => {
+            AWS.restore();
+            AWS.mock('S3', 'getSignedUrl', (operation, params, callback) => {
+                return callback(`failed_${operation}_${params.Key}`);
+            });
 
-        await expect(datastore.getDownloadUrl(givenKey)).resolves.toBe(expected);
+            AWS.mock('S3', 'headObject', (params, callback) => {
+                return callback(`failed_${params.Key}`, null);
+            });
+        });
+
+        it('Should fail if cannot produce an upload URL', () => {
+            expect.assertions(1);
+            expect(datastore.getUploadUrl("INVALID_KEY")).rejects.toThrow("failed_putObject_INVALID_KEY");
+        });
+
+        it('Should return null if key does not exist when exists', () => {
+            expect.assertions(1);
+            expect(datastore.exists("MISSING_KEY")).resolves.toBeNull();
+        });
+
+        it('Should return key if key does not exist when checking for not exists', () => {
+            expect.assertions(1);
+            expect(datastore.doesNotExist("VALID_KEY")).resolves.toBe("VALID_KEY");
+        });
     });
+
 
 });

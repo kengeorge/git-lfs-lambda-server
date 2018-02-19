@@ -17,7 +17,7 @@ class Datastore {
         throw new TypeError("Not implemented.");
     }
 
-    exists(key) {
+    exists(key, invert = false) {
         throw new TypeError("Not implemented.");
     }
 }

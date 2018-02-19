@@ -5,7 +5,7 @@ const forEach = K.forEach;
 const decorate = K.decorate;
 const get = K.get;
 const startWith = K.startWith;
-
+const Action = require('./common/Action');
 
 class BatchProcessor {
     constructor(datastore, transferType) {
@@ -29,9 +29,11 @@ class BatchProcessor {
             .then(forEach(decorate('actions', (obj) => {
                 return startWith(obj)
                     .then(get('oid'))
+                    .then(this.datastore.exists)
                     .then(isUpload ? this.datastore.getUploadUrl : this.datastore.getDownloadUrl)
                     .then(BatchProcessor.toAction)
                     .then((action) => isUpload ? {upload: action} : {download: action});
+                //TODO refactor to catch exist failure
             })))
             .then(this.toBatchResponseFormat)
             ;
@@ -47,10 +49,7 @@ class BatchProcessor {
     }
 
     static toAction(url) {
-        return {
-            href: url,
-            expires_in: 900
-        };
+        return new Action(url, 900);
     }
 
     toBatchResponseFormat(objectResponses) {

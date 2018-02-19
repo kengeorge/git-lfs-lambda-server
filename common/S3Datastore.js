@@ -1,5 +1,4 @@
 const AWS = require('aws-sdk');
-const s3 = new AWS.S3();
 const Datastore = require('./Datastore.js');
 
 class S3Datastore extends Datastore {
@@ -7,12 +6,14 @@ class S3Datastore extends Datastore {
     constructor(bucketName) {
         super();
         this.bucketName = bucketName;
+        this.s3 = new AWS.S3();
 
         //Binding since promises won't call with 'this'
         this.getUrl = this.getUrl.bind(this);
         this.getUploadUrl = this.getUploadUrl.bind(this);
         this.getDownloadUrl = this.getDownloadUrl.bind(this);
         this.getVerifyUrl = this.getVerifyUrl.bind(this);
+        this.doesNotExist = this.doesNotExist.bind(this);
         this.exists = this.exists.bind(this);
     }
 
@@ -25,8 +26,8 @@ class S3Datastore extends Datastore {
 
             if(contentType) params.ContentType = contentType;
 
-            return s3.getSignedUrl(action, params, function(err, data) {
-                if(err) reject(err);
+            return this.s3.getSignedUrl(action, params, function(err, data) {
+                if(err) reject(new Error(err));
                 else resolve(data);
             });
         });
@@ -40,23 +41,22 @@ class S3Datastore extends Datastore {
         return this.getUrl(key, 'getObject');
     }
 
-    getVerifyUrl(key) {
-        //TODO a verify action response will initiate a post to the given url after the upload is completed.
-        return super.getVerifyUrl(key);
+    doesNotExist(key) {
+        return this.exists(key, true);
     }
 
     exists(key, invert = false) {
-        var params = {
+        const params = {
             Bucket: this.bucketName,
             Key: key
         };
         //TODO
-        return s3.headObject(params).promise()
+        return this.s3.headObject(params).promise()
             .then(function() {
-                return invert ? null : item;
+                return invert ? null : key;
             })
             .catch(function() {
-                return invert ? item : null;
+                return invert ? key : null;
             });
     }
 }

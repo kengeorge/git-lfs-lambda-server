@@ -6,6 +6,7 @@ class S3Datastore extends Datastore {
     constructor(bucketName) {
         super();
         this.bucketName = bucketName;
+        //Initializing here makes it cleaner to re-mock AWS in tests.
         this.s3 = new AWS.S3();
 
         //Binding since promises won't call with 'this'
@@ -50,13 +51,21 @@ class S3Datastore extends Datastore {
             Bucket: this.bucketName,
             Key: key
         };
-        //TODO
+        let found = false;
         return this.s3.headObject(params).promise()
-            .then(function() {
-                return invert ? null : key;
+            .then(() => {
+                found = true;
+                return key;
             })
-            .catch(function() {
-                return invert ? key : null;
+            .catch(() => key)
+            //not sure why 'finally' won't work here
+            .then(() => {
+                if(found && !invert) return key;
+                if(!found && invert) return key;
+                throw {
+                    code: 404,
+                    message: `Object ${key} does not exist`
+                };
             });
     }
 }

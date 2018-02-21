@@ -13,6 +13,10 @@ describe('S3Datastore', () => {
         datastore = new S3Datastore(TEST_BUCKET_NAME);
     });
 
+    afterAll(() => {
+        AWS.restore();
+    });
+
     describe('Successful responses', () => {
         beforeAll(() => {
             AWS.restore();
@@ -36,7 +40,7 @@ describe('S3Datastore', () => {
             const expected = makeUrl("putObject", TEST_BUCKET_NAME, givenKey);
 
             expect.assertions(1);
-            expect(datastore.getUploadUrl(givenKey)).resolves.toBe(expected);
+            return expect(datastore.getUploadUrl(givenKey)).resolves.toBe(expected);
         });
 
         it('Should produce a signed download url', () => {
@@ -45,17 +49,17 @@ describe('S3Datastore', () => {
             const expected = makeUrl("getObject", TEST_BUCKET_NAME, "DOWNLOAD_KEY");
 
             expect.assertions(1);
-            expect(datastore.getDownloadUrl(givenKey)).resolves.toBe(expected);
+            return expect(datastore.getDownloadUrl(givenKey)).resolves.toBe(expected);
         });
 
         it('Should return key if exists when checking for exists', () => {
             expect.assertions(1);
-            expect(datastore.exists("VALID_KEY")).resolves.toBe("VALID_KEY");
+            return expect(datastore.exists("VALID_KEY")).resolves.toBe("VALID_KEY");
         });
 
-        it('Should return null if key exists when checking for not exists', () => {
+        it('Should throw if key exists when checking for not exists', () => {
             expect.assertions(1);
-            expect(datastore.doesNotExist("INVALID_KEY")).resolves.toBeNull();
+            return expect(datastore.doesNotExist("INVALID_KEY")).rejects.toThrow("INVALID_KEY");
         });
     });
 
@@ -74,17 +78,31 @@ describe('S3Datastore', () => {
 
         it('Should fail if cannot produce an upload URL', () => {
             expect.assertions(1);
-            expect(datastore.getUploadUrl("INVALID_KEY")).rejects.toThrow("failed_putObject_INVALID_KEY");
+            return expect(datastore.getUploadUrl("INVALID_KEY")).rejects.toThrow("failed_putObject_INVALID_KEY");
         });
 
-        it('Should return null if key does not exist when exists', () => {
+        it('Should fail if cannot produce download URL', () => {
             expect.assertions(1);
-            expect(datastore.exists("MISSING_KEY")).resolves.toBeNull();
+            return expect(datastore.getDownloadUrl("INVALID_KEY")).rejects.toThrow("failed_getObject_INVALID_KEY");
+        });
+
+        it('Should throw if key does not exist when exists', async() => {
+            let actual = null;
+            await datastore.exists("MISSING_KEY")
+                .catch((thrown) =>{
+                    actual = thrown;
+                });
+
+            expect.assertions(2);
+            expect(actual.code).toBe(404);
+            expect(actual.message).toMatch(/MISSING_KEY/);
+
         });
 
         it('Should return key if key does not exist when checking for not exists', () => {
+            const given = "validKey_doesNotExist";
             expect.assertions(1);
-            expect(datastore.doesNotExist("VALID_KEY")).resolves.toBe("VALID_KEY");
+            return expect(datastore.doesNotExist(given)).resolves.toBe(given);
         });
     });
 

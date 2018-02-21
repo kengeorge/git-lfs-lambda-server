@@ -5,6 +5,8 @@ const forEach = K.forEach;
 const decorate = K.decorate;
 const get = K.get;
 const startWith = K.startWith;
+const passBefore = K.passBefore;
+
 const Action = require('./common/Action');
 
 class BatchProcessor {
@@ -13,30 +15,48 @@ class BatchProcessor {
         this.transferType = transferType;
 
         this.toBatchResponseFormat = this.toBatchResponseFormat.bind(this);
+        this.process = this.process.bind(this);
+        this.populateDirective = this.populateDirective.bind(this);
     }
 
     processUpload(requestObjects) {
-        return this.process(requestObjects, true);
+        return startWith(requestObjects)
+            .then(forEach(passBefore(this.process, true)))
+            .then(this.toBatchResponseFormat)
+        ;
     }
 
     processDownload(requestObjects) {
-        return this.process(requestObjects, false);
+        return startWith(requestObjects)
+            .then(forEach(passBefore(this.process, false)))
+            .then(this.toBatchResponseFormat)
+        ;
     }
 
-    process(requestObjects, isUpload) {
-        return startWith(requestObjects)
-            .then(forEach(BatchProcessor.objectRequestToObjectResponse))
-            .then(forEach(decorate('actions', (obj) => {
-                return startWith(obj)
+    process(requestObject, isUpload) {
+        return startWith(requestObject)
+            .then(BatchProcessor.objectRequestToObjectResponse)
+            .then(passBefore(this.populateDirective, isUpload))
+    }
+
+    populateDirective(directive, isUpload) {
+        return startWith(directive)
+            .then(decorate('actions', (d) => {
+                return startWith(d)
                     .then(get('oid'))
                     .then(this.datastore.exists)
                     .then(isUpload ? this.datastore.getUploadUrl : this.datastore.getDownloadUrl)
                     .then(BatchProcessor.toAction)
-                    .then((action) => isUpload ? {upload: action} : {download: action});
-                //TODO refactor to catch exist failure
-            })))
-            .then(this.toBatchResponseFormat)
-            ;
+                    .then((action) => isUpload ? {upload: action} : {download: action})
+            }))
+            .catch(() =>{
+                directive.error = {
+                    code: 404,
+                    message: `Object ${directive.oid} not exist.`
+                };
+                return directive;
+            })
+        ;
     }
 
     static objectRequestToObjectResponse(item) {
@@ -44,7 +64,6 @@ class BatchProcessor {
             oid: item.oid,
             size: item.size,
             authenticated: true,
-            actions: {},
         };
     }
 
@@ -53,6 +72,7 @@ class BatchProcessor {
     }
 
     toBatchResponseFormat(objectResponses) {
+        console.log(objectResponses);
         return {
             transfer: this.transferType,
             objects: objectResponses

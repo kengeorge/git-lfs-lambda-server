@@ -1,26 +1,49 @@
 "use strict";
 
 const TRANSFER_TYPE = "basic";
-const toLambdaResponse = require('./common/lambdaResponse').toLambdaResponse;
-const makeProxyResponse = require('./common/lambdaResponse').makeProxyResponse;
+const respondWith = require('./common/responses');
 
 const S3Datastore = require('./common/S3Datastore.js');
 const datastore = new S3Datastore(process.env.GLL_ARTIFACTS_BUCKET);
-const BatchProcessor = require('BatchProcessor.js');
-const processor = new BatchProcessor(datastore, TRANSFER_TYPE);
+const BatchProcessor = require('./BatchProcessor.js');
+const processor = new BatchProcessor(datastore);
+const K = require('kpromise');
+const forEach = K.forEach;
+const startWith = K.startWith;
 
 exports.handler = function(event, context, callback) {
 
     let request = JSON.parse(event.body);
 
     if(request.transfer && !request.transfer.includes(TRANSFER_TYPE)) {
-        let res = makeProxyResponse(422, {"Error": "Unsupported transfer type"});
-        return callback(res, null);
+        return startWith(respondWith.gitLfsError(
+            `Unsupported transfer type: [${request.transfer}]`,
+            "https://github.com/git-lfs/git-lfs/blob/master/docs/api/batch.md", //TODO
+            context.awsRequestId
+        ))
+            .then(respondWith.lambdaReponse(422))
+            .then((res) => callback(res, null));
     }
 
-    let isUpload = request.operation === "upload";
-    return processor.process(request.objects, isUpload)
-        .then(toLambdaResponse(200))
-        .then((res) => callback(null, res));
+    const process = request.operation === "upload"
+        ? processor.getUploadDirective
+        : processor.getDownloadDirective;
+
+    return startWith(request.objects)
+        .then(forEach(process))
+        .then(toBatchResponseFormat)
+        .then(respondWith.lambdaReponse(200))
+        .then((response) => callback(null, response))
+        .catch((err) => {
+            return startWith(respondWith.gitLfsError(err.message, "TODO:doc url", "TODO: request id"))
+                .then((response) => callback(response, null));
+        })
+        ;
 };
 
+function toBatchResponseFormat(objectResponses) {
+    return {
+        transfer: TRANSFER_TYPE,
+        objects: objectResponses
+    };
+}

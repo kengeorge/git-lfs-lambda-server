@@ -7,9 +7,11 @@ const TRANSFER_TYPE = "TEST_TRANSFER_TYPE";
 const K = require('kpromise');
 const failWith = K.failWith;
 
-const MISSING = "missingKey";
 const uploadUrlFor = (key) => "UPLOAD_" + key;
 const downloadUrlFor = (key) => "DOWNLOAD_" + key;
+
+const MISSING_KEY = "missingKeyA";
+const EXISTING_KEY = "existingKeyA";
 
 describe('BatchProcessor', () => {
 
@@ -28,18 +30,18 @@ describe('BatchProcessor', () => {
             Datastore.mockImplementation(() => {
                 return {
                     exists: (key) => {
-                        if(key === MISSING) return failWith(key);
+                        if(key === MISSING_KEY || key === MISSING_KEY_B) return failWith(key);
                         return key;
                     },
                     doesNotExist: (key) => {
-                        if(key !== MISSING) return failWith(key);
+                        if(key !== MISSING_KEY && key !== MISSING_KEY_B) return failWith(key);
                         return key;
                     },
                     getDownloadUrl: (key) => {
                         return failWith(key + " should not get here!");
                     },
                     getUploadUrl: (key) => {
-                        if(key === MISSING) return failWith(key + " should not be here!");
+                        if(key !== MISSING_KEY && key !== MISSING_KEY_B) return failWith(key + " should not be here!");
                         return uploadUrlFor(key);
                     },
                 }
@@ -48,31 +50,26 @@ describe('BatchProcessor', () => {
 
 
         it('Should process an upload request.', async() => {
-            const given = [{oid: "testoid", size: 5}];
+            const given = {oid: MISSING_KEY, size: 5};
 
-            let actual = await processor.processUpload(given);
-            console.log(actual);
-
-            expect.assertions(2);
-            expect(actual.objects).toHaveLength(1);
-            expect(actual.objects[0].actions.upload.href).toBe("UPLOAD_testoid");
-        });
-
-        it('Should process multiple upload requests.', async() => {
-            const given = [
-                {oid: "testoid1", size: 5},
-                {oid: "testoid2", size: 5},
-            ];
-
-            let actual = await processor.processUpload(given);
-            console.log(actual);
+            const actual = await processor.getUploadDirective(given);
 
             expect.assertions(3);
-            expect(actual.objects).toHaveLength(2);
-            expect(actual.objects[0].actions.upload.href).toBe(uploadUrlFor("testoid1"));
-            expect(actual.objects[1].actions.upload.href).toBe(uploadUrlFor("testoid2"));
+            expect(actual.oid).toBe(MISSING_KEY);
+            expect(actual.error).toBeUndefined();
+            expect(actual.actions.upload.href).toBe(uploadUrlFor(MISSING_KEY));
         });
 
+        it('Should skip downloads for existing objects', async() => {
+            const given = {oid: EXISTING_KEY, size: 5};
+
+            const actual = await processor.getUploadDirective(given);
+
+            expect.assertions(3);
+            expect(actual.oid).toBe(EXISTING_KEY);
+            expect(actual.error).toBeUndefined();
+            expect(actual.actions).toBeUndefined();
+        });
     });
 
     describe('Downloads', () => {
@@ -81,15 +78,15 @@ describe('BatchProcessor', () => {
             Datastore.mockImplementation(() => {
                 return {
                     exists: (key) => {
-                        if(key === MISSING) return failWith(key);
+                        if(key === MISSING_KEY) return failWith(key);
                         return key;
                     },
                     doesNotExist: (key) => {
-                        if(key !== MISSING) return failWith(key);
+                        if(key !== MISSING_KEY) return failWith(key);
                         return key;
                     },
                     getDownloadUrl: (key) => {
-                        if(key === MISSING) return failWith(key + " should not be here!");
+                        if(key === MISSING_KEY) return failWith(key + " should not be here!");
                         return downloadUrlFor(key);
                     },
                     getUploadUrl: (key) => {
@@ -101,48 +98,25 @@ describe('BatchProcessor', () => {
 
 
         it('Should process a download request.', async() => {
-            const given = [{oid: "testoid", size: 5}];
+            const given = {oid: EXISTING_KEY, size: 5};
 
-            const actual = await processor.processDownload(given);
-            console.log(actual.objects[0]);
-
-            expect.assertions(2);
-            expect(actual.objects).toHaveLength(1);
-            expect(actual.objects[0].actions.download.href).toBe("DOWNLOAD_testoid");
-        });
-
-        it('Should process multiple download requests.', async() => {
-            const given = [
-                {oid: "testoid1", size: 5},
-                {oid: "testoid2", size: 10}
-            ];
-
-            const actual = await processor.processDownload(given);
-            console.log(actual.objects[0].actions);
+            const actual = await processor.getDownloadDirective(given);
 
             expect.assertions(3);
-            expect(actual.objects).toHaveLength(2);
-            expect(actual.objects[0].actions.download.href).toBe("DOWNLOAD_testoid1");
-            expect(actual.objects[1].actions.download.href).toBe("DOWNLOAD_testoid2");
+            expect(actual.oid).toBe(EXISTING_KEY);
+            expect(actual.error).toBeUndefined();
+            expect(actual.actions.download.href).toBe(downloadUrlFor(EXISTING_KEY));
         });
 
-        it('Should give 404 on downloading missing objects', async() => {
-            const given = [
-                {oid: MISSING, size: 5},
-                {oid: "notMissing", size: 5}
-            ];
+        it('Should give 404 for missing objects', async() => {
+            const given = {oid: MISSING_KEY, size: 5};
 
-            const actual = await processor.processDownload(given);
+            const actual = await processor.getDownloadDirective(given);
 
-            expect.assertions(8);
-            expect(actual.objects).toHaveLength(2);
-            expect(actual.objects[0].oid).toBe(MISSING);
-            expect(actual.objects[0].size).toBe(5);
-            expect(actual.objects[0].actions).toBeUndefined();
-            expect(actual.objects[0].error.code).toBe(404);
-            expect(actual.objects[1].oid).toBe("notMissing");
-            expect(actual.objects[1].size).toBe(5);
-            expect(actual.objects[1].actions.download.href).toBe(downloadUrlFor("notMissing"));
+            expect.assertions(3);
+            expect(actual.oid).toBe(MISSING_KEY);
+            expect(actual.error.code).toBe(404);
+            expect(actual.actions).toBeUndefined();
         });
     });
 });

@@ -1,6 +1,6 @@
 "use strict";
 
-const toLambdaResponse = require('./common/lambdaResponse').toLambdaResponse;
+const toLambdaResponse = require('./common/responses').lambdaReponse;
 const Locks = require('./common/Locks');
 const locks = new Locks();
 

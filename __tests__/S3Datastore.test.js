@@ -1,14 +1,48 @@
 const AWS = require('aws-sdk-mock');
-const S3Datastore = require('../common/S3Datastore');
+const S3Datastore = require('../src/common/S3Datastore');
 const TEST_BUCKET_NAME = "TEST_BUCKET_NAME";
 
 function makeUrl(operation, bucket, key) {
-    return `${operation}_URL_FOR_${bucket}_${key}`;
+    return `${operation}:${bucket}/${key}`;
 }
+
+const MISSING_KEY = "missingKey";
+const EXISTING_KEY = "existingKey";
+const startWith = require('kpromise').startWith;
 
 describe('S3Datastore', () => {
 
     let datastore = null;
+
+    beforeAll(() => {
+        AWS.restore();
+        AWS.mock('S3', 'getSignedUrl', (operation, params, callback) => {
+
+            if(operation === 'putObject' && params.Key === MISSING_KEY) {
+                return callback(null, makeUrl(operation, params.Bucket, params.Key));
+            }
+
+            if(operation === 'getObject' && params.Key === EXISTING_KEY) {
+                return callback(null, makeUrl(operation, params.Bucket, params.Key));
+            }
+
+
+            return callback("FakeError");
+        });
+
+        AWS.mock('S3', 'headObject', (params, callback) => {
+            if(params.Key === EXISTING_KEY) return callback(null, {});
+
+            if(params.Key === MISSING_KEY) return callback({
+                    code: "NoSuchKey",
+                    message: "Mock s3: no such key " + params.Key
+                }
+            );
+
+            return callback("FakeError");
+        });
+    });
+
     beforeEach(() => {
         datastore = new S3Datastore(TEST_BUCKET_NAME);
     });
@@ -17,94 +51,59 @@ describe('S3Datastore', () => {
         AWS.restore();
     });
 
-    describe('Successful responses', () => {
-        beforeAll(() => {
-            AWS.restore();
-            AWS.mock('S3', 'getSignedUrl', (operation, params, callback) => {
-                return callback(null, makeUrl(operation, params.Bucket, params.Key));
-            });
+    it('Should produce a signed upload url', async() => {
+        const given = MISSING_KEY;
 
-            AWS.mock('S3', 'headObject', (params, callback) => {
-                return callback(null, "mockHeadResponse");
-            });
-        });
+        const actual = await startWith(given)
+            .then(datastore.getUploadUrl);
 
-        let datastore = null;
-        beforeEach(() => {
-            datastore = new S3Datastore(TEST_BUCKET_NAME);
-        });
-
-        it('Should produce a signed upload url', () => {
-            const givenKey = "UPLOAD_KEY";
-
-            const expected = makeUrl("putObject", TEST_BUCKET_NAME, givenKey);
-
-            expect.assertions(1);
-            return expect(datastore.getUploadUrl(givenKey)).resolves.toBe(expected);
-        });
-
-        it('Should produce a signed download url', () => {
-            const givenKey = "DOWNLOAD_KEY";
-
-            const expected = makeUrl("getObject", TEST_BUCKET_NAME, "DOWNLOAD_KEY");
-
-            expect.assertions(1);
-            return expect(datastore.getDownloadUrl(givenKey)).resolves.toBe(expected);
-        });
-
-        it('Should return key if exists when checking for exists', () => {
-            expect.assertions(1);
-            return expect(datastore.exists("VALID_KEY")).resolves.toBe("VALID_KEY");
-        });
-
-        it('Should throw if key exists when checking for not exists', () => {
-            expect.assertions(1);
-            return expect(datastore.doesNotExist("INVALID_KEY")).rejects.toThrow("INVALID_KEY");
-        });
+        expect.assertions(1);
+        expect(actual).toBe(makeUrl("putObject", TEST_BUCKET_NAME, given));
     });
 
-    describe('Error responses', () => {
+    it('Should produce a signed download url', async() => {
+        const given = EXISTING_KEY;
 
-        beforeAll(() => {
-            AWS.restore();
-            AWS.mock('S3', 'getSignedUrl', (operation, params, callback) => {
-                return callback(`failed_${operation}_${params.Key}`);
-            });
+        const actual = await startWith(given)
+            .then(datastore.getDownloadUrl);
 
-            AWS.mock('S3', 'headObject', (params, callback) => {
-                return callback(`failed_${params.Key}`, null);
-            });
-        });
-
-        it('Should fail if cannot produce an upload URL', () => {
-            expect.assertions(1);
-            return expect(datastore.getUploadUrl("INVALID_KEY")).rejects.toThrow("failed_putObject_INVALID_KEY");
-        });
-
-        it('Should fail if cannot produce download URL', () => {
-            expect.assertions(1);
-            return expect(datastore.getDownloadUrl("INVALID_KEY")).rejects.toThrow("failed_getObject_INVALID_KEY");
-        });
-
-        it('Should throw if key does not exist when exists', async() => {
-            let actual = null;
-            await datastore.exists("MISSING_KEY")
-                .catch((thrown) =>{
-                    actual = thrown;
-                });
-
-            expect.assertions(2);
-            expect(actual.code).toBe(404);
-            expect(actual.message).toMatch(/MISSING_KEY/);
-
-        });
-
-        it('Should return key if key does not exist when checking for not exists', () => {
-            const given = "validKey_doesNotExist";
-            expect.assertions(1);
-            return expect(datastore.doesNotExist(given)).resolves.toBe(given);
-        });
+        expect.assertions(1);
+        expect(actual).toBe(makeUrl("getObject", TEST_BUCKET_NAME, given));
     });
 
+    it('Should return true if exists', async() => {
+        const given = EXISTING_KEY;
+
+        const actual = await startWith(given)
+            .then(datastore.exists);
+
+        expect.assertions(1);
+        expect(actual).toBe(true);
+    });
+
+    it('Should return false if does not exist', async() => {
+        const given = MISSING_KEY;
+
+        const actual = await startWith(given)
+            .then(datastore.exists);
+
+        expect.assertions(1);
+        expect(actual).toBe(false);
+    });
+
+    it('Should throw other errors', () =>{
+        expect.assertions(1);
+        return expect(datastore.exists("badKey")).rejects.toThrow(/FakeError/);
+    });
+
+    it('Should throw other upload URL errors', () => {
+        expect.assertions(1);
+        return expect(datastore.getUploadUrl("badKey")).rejects.toThrowError(/FakeError/);
+    });
+
+    it('Should throw other download URL errors', () => {
+        expect.assertions(1);
+        return expect(datastore.getDownloadUrl("badKey")).rejects.toThrowError(/FakeError/);
+    });
 
 });

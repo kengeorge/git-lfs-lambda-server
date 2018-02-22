@@ -14,7 +14,6 @@ class S3Datastore extends Datastore {
         this.getUploadUrl = this.getUploadUrl.bind(this);
         this.getDownloadUrl = this.getDownloadUrl.bind(this);
         this.getVerifyUrl = this.getVerifyUrl.bind(this);
-        this.doesNotExist = this.doesNotExist.bind(this);
         this.exists = this.exists.bind(this);
     }
 
@@ -28,6 +27,7 @@ class S3Datastore extends Datastore {
             if(contentType) params.ContentType = contentType;
 
             return this.s3.getSignedUrl(action, params, function(err, data) {
+                console.log(params.Key);
                 if(err) reject(new Error(err));
                 else resolve(data);
             });
@@ -42,30 +42,19 @@ class S3Datastore extends Datastore {
         return this.getUrl(key, 'getObject');
     }
 
-    doesNotExist(key) {
-        return this.exists(key, true);
-    }
-
-    exists(key, invert = false) {
+    exists(key) {
         const params = {
             Bucket: this.bucketName,
             Key: key
         };
-        let found = false;
         return this.s3.headObject(params).promise()
             .then(() => {
-                found = true;
-                return key;
+                return true;
             })
-            .catch(() => key)
-            //not sure why 'finally' won't work here
-            .then(() => {
-                if(found && !invert) return key;
-                if(!found && invert) return key;
-                throw {
-                    code: 404,
-                    message: `Object ${key} does not exist`
-                };
+            .catch((e) => {
+                if(e && e.code === "NoSuchKey") return false;
+
+                throw new Error(e);
             });
     }
 }

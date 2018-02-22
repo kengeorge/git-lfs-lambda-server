@@ -26,6 +26,6 @@ function gitLfsError(message, docUrl, requestId) {
     };
 }
 
-exports.lambdaReponse = lambdaResponse;
+exports.lambdaResponse = lambdaResponse;
 exports.lambdaProxyResponse = lambdaProxyResponse;
 exports.gitLfsError = gitLfsError;

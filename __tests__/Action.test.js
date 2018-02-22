@@ -1,4 +1,4 @@
-const Action = require('../common/Action');
+const Action = require('../src/common/Action');
 
 describe('Action', () => {
 

@@ -19,7 +19,7 @@ Resources:
       Runtime: nodejs6.10
       Timeout: 60
       Handler: batch.handler
-      CodeUri: .
+      CodeUri: ./src
       Environment:
         Variables:
           GLL_ARTIFACTS_BUCKET: !Ref artifactsBucket
@@ -39,7 +39,7 @@ Resources:
       Runtime: nodejs6.10
       Timeout: 60
       Handler: verifyLocks.handler
-      CodeUri: .
+      CodeUri: ./src
       Events:
         Api:
           Type: Api
@@ -53,7 +53,7 @@ Resources:
       Runtime: nodejs6.10
       Timeout: 60
       Handler: listLocks.handler
-      CodeUri: .
+      CodeUri: ./src
       Events:
         Api:
           Type: Api
@@ -67,7 +67,7 @@ Resources:
       Runtime: nodejs6.10
       Timeout: 60
       Handler: createLock.handler
-      CodeUri: .
+      CodeUri: ./src
       Events:
         Api:
           Type: Api
@@ -81,7 +81,7 @@ Resources:
       Runtime: nodejs6.10
       Timeout: 60
       Handler: deleteLock.handler
-      CodeUri: .
+      CodeUri: ./src
       Events:
         Api:
           Type: Api

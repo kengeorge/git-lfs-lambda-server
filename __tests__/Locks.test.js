@@ -1,4 +1,4 @@
-const Locks = require('../common/Locks');
+const Locks = require('../src/common/Locks');
 
 describe('VerifyLocksProcessor', () => {
 

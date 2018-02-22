@@ -1,4 +1,4 @@
-const Lock = require('../common/Lock');
+const Lock = require('../src/common/Lock');
 
 describe('Lock', () => {
 

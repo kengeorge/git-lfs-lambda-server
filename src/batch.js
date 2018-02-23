@@ -11,16 +11,18 @@ const K = require('kpromise');
 const forEach = K.forEach;
 const startWith = K.startWith;
 
+const BATCH_DOC = "https://github.com/git-lfs/git-lfs/blob/master/docs/api/batch.md";
+
 exports.handler = function(event, context, callback) {
 
     let request = JSON.parse(event.body);
 
-    if(request.transfer && !request.transfer.includes(TRANSFER_TYPE)) {
-        return startWith(respondWith.gitLfsError(
-            `Unsupported transfer type: [${request.transfer}]`,
-            "https://github.com/git-lfs/git-lfs/blob/master/docs/api/batch.md", //TODO
-            context.awsRequestId
-        ))
+    if(request.transfers && !request.transfers.includes(TRANSFER_TYPE)) {
+        return startWith(
+            respondWith.gitLfsError(
+                `Unsupported transfer type: [${request.transfers}]`,
+                BATCH_DOC, context.awsRequestId
+            ))
             .then(respondWith.lambdaResponse(422))
             .then((res) => callback(res, null));
     }
@@ -35,10 +37,10 @@ exports.handler = function(event, context, callback) {
         .then(respondWith.lambdaResponse(200))
         .then((response) => callback(null, response))
         .catch((err) => {
-            return startWith(respondWith.gitLfsError(err.message, "TODO:doc url", "TODO: request id"))
+            return startWith(respondWith.gitLfsError(err.message, BATCH_DOC, context.awsRequestId))
+                .then(respondWith.lambdaResponse(500))
                 .then((response) => callback(response, null));
-        })
-        ;
+        });
 };
 
 function toBatchResponseFormat(objectResponses) {

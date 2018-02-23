@@ -34,7 +34,7 @@ describe('S3Datastore', () => {
             if(params.Key === EXISTING_KEY) return callback(null, {});
 
             if(params.Key === MISSING_KEY) return callback({
-                    code: "NoSuchKey",
+                    code: "NotFound",
                     message: "Mock s3: no such key " + params.Key
                 }
             );

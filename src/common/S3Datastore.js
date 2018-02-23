@@ -52,7 +52,8 @@ class S3Datastore extends Datastore {
                 return true;
             })
             .catch((e) => {
-                if(e && e.code === "NoSuchKey") return false;
+                console.log(e);
+                if(e && e.code === "NotFound") return false;
 
                 throw new Error(e);
             });

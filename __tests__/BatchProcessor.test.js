@@ -30,7 +30,6 @@ describe('BatchProcessor', () => {
             Datastore.mockImplementation(() => {
                 return {
                     exists: (key) => {
-                        console.log(key);
                         if(key === EXISTING_KEY) return startWith(true);
                         if(key === MISSING_KEY) return startWith(false);
                         throw new Error("Unhandled test exception: exist");
@@ -50,8 +49,9 @@ describe('BatchProcessor', () => {
             const actual = await startWith(given)
                 .then(processor.getUploadDirective);
 
-            expect.assertions(3);
+            expect.assertions(4);
             expect(actual.oid).toBe(MISSING_KEY);
+            expect(actual.size).toBe(5);
             expect(actual.error).toBeUndefined();
             expect(actual.actions.upload.href).toMatch(uploadUrlFor(MISSING_KEY));
         });
@@ -62,9 +62,9 @@ describe('BatchProcessor', () => {
             const actual = await startWith(given)
                 .then(processor.getUploadDirective);
 
-            expect.assertions(3);
-            console.log(actual);
+            expect.assertions(4);
             expect(actual.oid).toBe(EXISTING_KEY);
+            expect(actual.size).toBe(5);
             expect(actual.error).toBeUndefined();
             expect(actual.actions).toBeUndefined();
         });
@@ -77,7 +77,6 @@ describe('BatchProcessor', () => {
             Datastore.mockImplementation(() => {
                 return {
                     exists: (key) => {
-                        console.log(key);
                         if(key === EXISTING_KEY) return startWith(true);
                         if(key === MISSING_KEY) return startWith(false);
                         throw new Error("Unhandled test exception");
@@ -97,8 +96,9 @@ describe('BatchProcessor', () => {
             const actual = await startWith(given)
                 .then(processor.getDownloadDirective);
 
-            expect.assertions(3);
+            expect.assertions(4);
             expect(actual.oid).toBe(EXISTING_KEY);
+            expect(actual.size).toBe(5);
             expect(actual.error).toBeUndefined();
             expect(actual.actions.download.href).toBe(downloadUrlFor(EXISTING_KEY));
         });
@@ -109,8 +109,9 @@ describe('BatchProcessor', () => {
             const actual = await startWith(given)
                 .then(processor.getDownloadDirective);
 
-            expect.assertions(3);
+            expect.assertions(4);
             expect(actual.oid).toBe(MISSING_KEY);
+            expect(actual.size).toBe(5);
             expect(actual.error.code).toBe(404);
             expect(actual.actions).toBeUndefined();
         });
@@ -140,8 +141,9 @@ describe('BatchProcessor', () => {
                 const actual = await startWith(given)
                     .then(processor.getUploadDirective);
 
-                expect.assertions(3);
+                expect.assertions(4);
                 expect(actual.oid).toBe(MISSING_KEY);
+                expect(actual.size).toBe(5);
                 expect(actual.actions).toBeUndefined();
                 expect(actual.error).toEqual(TEST_ERROR);
             });
@@ -168,8 +170,9 @@ describe('BatchProcessor', () => {
                 const actual = await startWith(given)
                     .then(processor.getUploadDirective);
 
-                expect.assertions(3);
+                expect.assertions(4);
                 expect(actual.oid).toBe(MISSING_KEY);
+                expect(actual.size).toBe(5);
                 expect(actual.actions).toBeUndefined();
                 expect(actual.error).toEqual(TEST_ERROR);
             });
@@ -196,8 +199,9 @@ describe('BatchProcessor', () => {
                 const actual = await startWith(given)
                     .then(processor.getDownloadDirective);
 
-                expect.assertions(3);
+                expect.assertions(4);
                 expect(actual.oid).toBe(MISSING_KEY);
+                expect(actual.size).toBe(5);
                 expect(actual.actions).toBeUndefined();
                 expect(actual.error).toEqual(TEST_ERROR);
             });

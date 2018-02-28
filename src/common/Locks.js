@@ -20,12 +20,6 @@ class Locks {
     }
 
     create(pathToFile) {
-        return promiseFor(new Lock(
-            "fake id", //TODO
-            pathToFile,
-            new Date().toISOString(),
-            {name: "Fake Owner"} //TODO
-        ));
         return promiseFor(Locks.toLockResponse(tempLock));
     }
 

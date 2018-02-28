@@ -27,7 +27,6 @@ class S3Datastore extends Datastore {
             if(contentType) params.ContentType = contentType;
 
             return this.s3.getSignedUrl(action, params, function(err, data) {
-                console.log(params.Key);
                 if(err) reject(new Error(err));
                 else resolve(data);
             });
@@ -52,7 +51,6 @@ class S3Datastore extends Datastore {
                 return true;
             })
             .catch((e) => {
-                console.log(e);
                 if(e && e.code === "NotFound") return false;
 
                 throw new Error(e);

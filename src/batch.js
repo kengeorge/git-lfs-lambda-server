@@ -27,12 +27,12 @@ exports.handler = function(event, context, callback) {
             .then((res) => callback(res, null));
     }
 
-    const process = request.operation === "upload"
+    const processFunction = request.operation === "upload"
         ? processor.getUploadDirective
         : processor.getDownloadDirective;
 
     return startWith(request.objects)
-        .then(forEach(process))
+        .then(forEach(processFunction))
         .then(toBatchResponseFormat)
         .then(respondWith.lambdaResponse(200))
         .then((response) => callback(null, response))

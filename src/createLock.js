@@ -1,13 +1,8 @@
 "use strict";
 
-const Locks = require('./common/Locks');
-const locks = new Locks();
-const toLambdaResponse = require('./common/responses').lambdaResponse;
+const VerifyLocksHandler = require('./LocksHandler');
 
 exports.handler = function(event, context, callback) {
-    let request = JSON.parse(event.body);
-
-    return locks.create(request)
-        .then(toLambdaResponse(200))
-        .then((res) => callback(null, res))
+    const handler = new VerifyLocksHandler('create');
+    return handler.handle(event, context, callback);
 };

@@ -15,7 +15,6 @@ describe('S3Datastore', () => {
     let datastore = null;
 
     beforeAll(() => {
-        AWS.restore();
         AWS.mock('S3', 'getSignedUrl', (operation, params, callback) => {
 
             if(operation === 'putObject' && params.Key === MISSING_KEY) {

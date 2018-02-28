@@ -12,7 +12,7 @@ const tempLock = new Lock(
 
 class Locks {
     list() {
-        return promiseFor(Locks.toListLocksResponse())
+        throw {statusCode: 501, message: "Locks: List not implemented"};
     }
 
     verify() {
@@ -20,11 +20,11 @@ class Locks {
     }
 
     create(pathToFile) {
-        return promiseFor(Locks.toLockResponse(tempLock));
+        throw {statusCode: 501, message: "Locks: Create not implemented"};
     }
 
     delete() {
-        return promiseFor(Locks.toLockResponse(tempLock));
+        throw {statusCode: 501, message: "Locks: Delete not implemented"};
     }
 
     static toLockResponse(lock) {

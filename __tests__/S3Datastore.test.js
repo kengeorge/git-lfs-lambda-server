@@ -1,53 +1,58 @@
-const AWS = require('aws-sdk-mock');
-const S3Datastore = require('../src/common/S3Datastore');
 const TEST_BUCKET_NAME = "TEST_BUCKET_NAME";
+const MISSING_KEY = "missingKey";
+const EXISTING_KEY = "existingKey";
+const startWith = require('kpromise').startWith;
 
 function makeUrl(operation, bucket, key) {
     return `${operation}:${bucket}/${key}`;
 }
 
-const MISSING_KEY = "missingKey";
-const EXISTING_KEY = "existingKey";
-const startWith = require('kpromise').startWith;
 
 describe('S3Datastore', () => {
 
     let datastore = null;
 
     beforeAll(() => {
-        AWS.mock('S3', 'getSignedUrl', (operation, params, callback) => {
+        const mockS3 = jest.fn(() => ({
+            headObject: (params) => {
+                return {
+                    promise: () => {
+                        if(params.Key === EXISTING_KEY) return Promise.resolve({});
 
-            if(operation === 'putObject' && params.Key === MISSING_KEY) {
-                return callback(null, makeUrl(operation, params.Bucket, params.Key));
-            }
+                        if(params.Key === MISSING_KEY) return Promise.reject({
+                            code: "NotFound",
+                            message: "Mock s3: no such key " + params.Key
+                        });
 
-            if(operation === 'getObject' && params.Key === EXISTING_KEY) {
-                return callback(null, makeUrl(operation, params.Bucket, params.Key));
-            }
-
-
-            return callback("FakeError");
-        });
-
-        AWS.mock('S3', 'headObject', (params, callback) => {
-            if(params.Key === EXISTING_KEY) return callback(null, {});
-
-            if(params.Key === MISSING_KEY) return callback({
-                    code: "NotFound",
-                    message: "Mock s3: no such key " + params.Key
+                        return Promise.reject("FakeError");
+                    }
                 }
-            );
+            },
+            getSignedUrl: (operation, params, callback) => {
+                if(operation === 'putObject' && params.Key === MISSING_KEY) {
+                    return callback(null, makeUrl(operation, params.Bucket, params.Key));
+                }
 
-            return callback("FakeError");
+                if(operation === 'getObject' && params.Key === EXISTING_KEY) {
+                    return callback(null, makeUrl(operation, params.Bucket, params.Key));
+                }
+
+                return callback("FakeError");
+            }
+        }));
+
+        jest.setMock('aws-sdk', {
+            S3: mockS3
         });
     });
 
     beforeEach(() => {
+        const S3Datastore = require('../src/common/S3Datastore');
         datastore = new S3Datastore(TEST_BUCKET_NAME);
     });
 
     afterAll(() => {
-        AWS.restore();
+        jest.resetModules();
     });
 
     it('Should produce a signed upload url', async() => {
@@ -90,7 +95,7 @@ describe('S3Datastore', () => {
         expect(actual).toBe(false);
     });
 
-    it('Should throw other errors', () =>{
+    it('Should throw other errors', () => {
         expect.assertions(1);
         return expect(datastore.exists("badKey")).rejects.toThrow(/FakeError/);
     });

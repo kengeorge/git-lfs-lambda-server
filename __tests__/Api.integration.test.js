@@ -1,5 +1,3 @@
-const AWS = require('aws-sdk-mock');
-
 describe('GLL API', () => {
 
     const callback = jest.fn();
@@ -9,7 +7,7 @@ describe('GLL API', () => {
     });
 
     afterAll(() => {
-        AWS.restore();
+        jest.resetModules();
     });
 
     describe('batch', () => {
@@ -26,30 +24,38 @@ describe('GLL API', () => {
         beforeAll(() => {
             process.env.GLL_ARTIFACTS_BUCKET = INTEGRATION_BUCKET;
 
-            AWS.mock('S3', 'getSignedUrl', (operation, params, callback) => {
-                console.log("here?");
-                if(operation === 'putObject' && params.Key === MISSING_KEY) {
-                    return callback(null, makeUrl(operation, params.Bucket, params.Key));
-                }
+            const mockS3 = jest.fn(() => ({
+                headObject: (params) => {
+                    return {
+                        promise: () => {
+                            if(params.Key === EXISTING_KEY) return Promise.resolve({});
 
-                if(operation === 'getObject' && params.Key === EXISTING_KEY) {
-                    return callback(null, makeUrl(operation, params.Bucket, params.Key));
-                }
+                            if(params.Key === MISSING_KEY) return Promise.reject({
+                                code: "NotFound",
+                                message: "Mock s3: no such key " + params.Key
+                            });
 
-                return callback("FakeError");
-            });
-
-            AWS.mock('S3', 'headObject', (params, callback) => {
-                if(params.Key === EXISTING_KEY) return callback(null, {});
-
-                if(params.Key === MISSING_KEY) return callback({
-                        code: "NotFound",
-                        message: "Mock s3: no such key " + params.Key
+                            return Promise.reject("FakeError");
+                        }
                     }
-                );
+                },
+                getSignedUrl: (operation, params, callback) => {
+                    if(operation === 'putObject' && params.Key === MISSING_KEY) {
+                        return callback(null, makeUrl(operation, params.Bucket, params.Key));
+                    }
 
-                return callback("FakeError");
+                    if(operation === 'getObject' && params.Key === EXISTING_KEY) {
+                        return callback(null, makeUrl(operation, params.Bucket, params.Key));
+                    }
+
+                    return callback("FakeError");
+                }
+            }));
+
+            jest.setMock('aws-sdk', {
+                S3: mockS3
             });
+
         });
 
         let batch = null;
@@ -58,7 +64,7 @@ describe('GLL API', () => {
         });
 
         afterAll(() => {
-            AWS.restore();
+            jest.resetModules();
         });
 
         it('will respond empty to empty', async() => {
@@ -87,7 +93,7 @@ describe('GLL API', () => {
                 event: {
                     body: JSON.stringify({
                         operation: 'upload',
-                        objects: [{oid: 123, size: 25}]
+                        objects: [{oid: MISSING_KEY, size: 25}]
                     })
                 },
                 context: {
@@ -97,15 +103,14 @@ describe('GLL API', () => {
 
             await batch.handler(given.event, given.context, callback);
 
-            expect.assertions(4);
+            expect.assertions(5);
             expect(callback).toHaveBeenCalledTimes(1);
             expect(callback.mock.calls[0][0]).toBeNull();
             expect(callback.mock.calls[0][1].statusCode).toBe(200);
 
             const response = JSON.parse(callback.mock.calls[0][1].body);
             expect(response.objects).toHaveLength(1);
-            console.log(response.objects[0]);
-            expect(response.objects[0].actions.upload.href).toBe(makeUrl('putObject', INTEGRATION_BUCKET, 123))
+            expect(response.objects[0].actions.upload.href).toBe(makeUrl('putObject', INTEGRATION_BUCKET, MISSING_KEY))
         });
 
     });

@@ -1,5 +1,5 @@
-const AWS = require('aws-sdk');
 const Datastore = require('./Datastore.js');
+const AWS = require('aws-sdk');
 
 class S3Datastore extends Datastore {
 
@@ -48,6 +48,7 @@ class S3Datastore extends Datastore {
         };
         return this.s3.headObject(params).promise()
             .then(() => {
+                console.log("hj")
                 return true;
             })
             .catch((e) => {

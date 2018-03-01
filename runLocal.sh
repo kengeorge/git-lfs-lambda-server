@@ -5,6 +5,6 @@
 templateFile=testTemplate.yaml
 runDir="."
 
-params="bucketName=gll-server-dev-artifacts"
-
-GLL_ARTIFACTS_BUCKET=cloudrepo-git-lfs-lambda sam local start-api --template $runDir/$templateFile --parameter-values "$params"
+GLL_ARTIFACTS_BUCKET=cloudrepo-git-lfs-lambda \
+GLL_ENDPOINT=127.0.0.1:3000 \
+sam local start-api --template $runDir/$templateFile

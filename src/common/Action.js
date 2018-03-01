@@ -1,7 +1,7 @@
 class Action {
     constructor(href, expires) {
         this.href = href;
-        this.expires = expires;
+        if(expires) this.expires = expires;
     }
 }
 

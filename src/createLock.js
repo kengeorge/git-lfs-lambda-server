@@ -1,6 +1,6 @@
 "use strict";
 
-const VerifyLocksHandler = require('./LocksHandler');
+const VerifyLocksHandler = require('./LockHandler');
 
 exports.handler = function(event, context, callback) {
     const handler = new VerifyLocksHandler('create');

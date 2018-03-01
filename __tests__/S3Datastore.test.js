@@ -17,7 +17,9 @@ describe('S3Datastore', () => {
             headObject: (params) => {
                 return {
                     promise: () => {
-                        if(params.Key === EXISTING_KEY) return Promise.resolve({});
+                        if(params.Key === EXISTING_KEY) return Promise.resolve({
+                            ContentLength: 64
+                        });
 
                         if(params.Key === MISSING_KEY) return Promise.reject({
                             code: "NotFound",
@@ -58,8 +60,7 @@ describe('S3Datastore', () => {
     it('Should produce a signed upload url', async() => {
         const given = MISSING_KEY;
 
-        const actual = await startWith(given)
-            .then(datastore.getUploadUrl);
+        const actual = await startWith(given).then(datastore.getUploadUrl);
 
         expect.assertions(1);
         expect(actual).toBe(makeUrl("putObject", TEST_BUCKET_NAME, given));
@@ -68,8 +69,7 @@ describe('S3Datastore', () => {
     it('Should produce a signed download url', async() => {
         const given = EXISTING_KEY;
 
-        const actual = await startWith(given)
-            .then(datastore.getDownloadUrl);
+        const actual = await startWith(given).then(datastore.getDownloadUrl);
 
         expect.assertions(1);
         expect(actual).toBe(makeUrl("getObject", TEST_BUCKET_NAME, given));
@@ -78,8 +78,7 @@ describe('S3Datastore', () => {
     it('Should return true if exists', async() => {
         const given = EXISTING_KEY;
 
-        const actual = await startWith(given)
-            .then(datastore.exists);
+        const actual = await startWith(given).then(datastore.exists);
 
         expect.assertions(1);
         expect(actual).toBe(true);
@@ -88,11 +87,33 @@ describe('S3Datastore', () => {
     it('Should return false if does not exist', async() => {
         const given = MISSING_KEY;
 
-        const actual = await startWith(given)
-            .then(datastore.exists);
+        const actual = await startWith(given).then(datastore.exists);
 
         expect.assertions(1);
         expect(actual).toBe(false);
+    });
+
+    it('Should return info for existing objects', async() => {
+        const given = EXISTING_KEY;
+
+        const actual = await startWith(given).then(datastore.getInfo);
+
+        expect.assertions(1);
+        expect(actual.ContentLength).toBe(64);
+    });
+
+    it('Should return null info for missing objects', async() =>{
+        const given = MISSING_KEY;
+
+        expect.assertions(1);
+        const actual = await startWith(given).then(datastore.getInfo);
+
+        expect(actual).toBeNull();
+    });
+
+    it('Should throw other errors when fetching info', () => {
+        expect.assertions(1);
+        return expect(datastore.exists("badKey")).rejects.toThrow(/FakeError/);
     });
 
     it('Should throw other errors', () => {

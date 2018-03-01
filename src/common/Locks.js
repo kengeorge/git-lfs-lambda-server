@@ -3,12 +3,6 @@ const K = require('kpromise');
 const promiseFor = K.startWith;
 
 const Lock = require('./Lock');
-const tempLock = new Lock(
-    "fake id",
-    "/fake/path",
-    new Date().toISOString(),
-    {name: "Fake Owner"}
-);
 
 class Locks {
     list() {

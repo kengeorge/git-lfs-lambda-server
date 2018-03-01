@@ -13,7 +13,7 @@ class Datastore {
         throw new TypeError("Not implemented.");
     }
 
-    getVerifyUrl(key) {
+    getInfo(key) {
         throw new TypeError("Not implemented.");
     }
 

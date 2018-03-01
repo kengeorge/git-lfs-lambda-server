@@ -8,16 +8,16 @@ class VerifyLocksHandler extends Handler {
         this.locks = new Locks();
         switch(operation){
             case "verify":
-                this.process = this.locks.verify;
+                this.process = this.locks.verify.bind(this);
                 break;
             case "list":
-                this.process = this.locks.list;
+                this.process = this.locks.list.bind(this);
                 break;
             case "create":
-                this.process = this.locks.create;
+                this.process = this.locks.create.bind(this);
                 break;
             case "delete":
-                this.process = this.locks.delete;
+                this.process = this.locks.delete.bind(this);
                 break;
             default:
                 throw new TypeError(`Unsupported lock operation: [${operation}]`);

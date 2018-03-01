@@ -1,9 +1,9 @@
 jest.mock('../src/common/Locks')
 
-const VerifyLocksHandler = require('../src/LocksHandler');
+const LockHandler = require('../src/LockHandler');
 const Locks = require('../src/common/Locks');
 
-describe('VerifyLocksHandler', () => {
+describe('LockHandler', () => {
 
     const testVerifyFunc = jest.fn();
     let handler = null;
@@ -19,7 +19,7 @@ describe('VerifyLocksHandler', () => {
     describe('Verify', () => {
 
         beforeEach(() => {
-            handler = new VerifyLocksHandler('verify');
+            handler = new LockHandler('verify');
         });
 
         afterEach(() => {

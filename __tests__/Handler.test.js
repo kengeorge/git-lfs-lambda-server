@@ -50,7 +50,7 @@ describe('Handler', () => {
 
         expect.assertions(7);
         expect(callback).toHaveBeenCalledTimes(1);
-        expect(callback.mock.calls[0][1]).toBeNull();
+        expect(callback.mock.calls[0][1]).toBeUndefined();
 
         expect(callback.mock.calls[0][0].statusCode).toBe(111);
         expect(callback.mock.calls[0][0].body).toBeDefined();
@@ -69,7 +69,7 @@ describe('Handler', () => {
 
         expect.assertions(7);
         expect(callback).toHaveBeenCalledTimes(1);
-        expect(callback.mock.calls[0][1]).toBeNull();
+        expect(callback.mock.calls[0][1]).toBeUndefined();
 
         expect(callback.mock.calls[0][0].statusCode).toBe(500);
         expect(callback.mock.calls[0][0].body).toBeDefined();

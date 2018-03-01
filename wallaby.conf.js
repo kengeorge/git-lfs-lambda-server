@@ -7,7 +7,7 @@ module.exports = function() {
 
         tests: [
             '**/__tests__/**/*.js?(x)',
-            '**/?(*.)(spec|test).js?(x)'
+            '**/?(*.)(spec|test).js?(x)',
         ],
 
         env: {

@@ -13,8 +13,8 @@ class S3Datastore extends Datastore {
         this.getUrl = this.getUrl.bind(this);
         this.getUploadUrl = this.getUploadUrl.bind(this);
         this.getDownloadUrl = this.getDownloadUrl.bind(this);
-        this.getVerifyUrl = this.getVerifyUrl.bind(this);
         this.exists = this.exists.bind(this);
+        this.getInfo = this.getInfo.bind(this);
     }
 
     getUrl(key, action, contentType) {
@@ -41,21 +41,22 @@ class S3Datastore extends Datastore {
         return this.getUrl(key, 'getObject');
     }
 
-    exists(key) {
+    getInfo(key) {
         const params = {
             Bucket: this.bucketName,
             Key: key
         };
         return this.s3.headObject(params).promise()
-            .then(() => {
-                console.log("hj")
-                return true;
-            })
             .catch((e) => {
-                if(e && e.code === "NotFound") return false;
+                if(e && e.code === "NotFound") return null;
 
                 throw new Error(e);
             });
+    }
+
+
+    exists(key) {
+        return this.getInfo(key).then(info => info != null);
     }
 }
 

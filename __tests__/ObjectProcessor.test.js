@@ -1,28 +1,30 @@
 jest.mock('../src/common/Datastore'); //has to be first or wallaby will blow up.
 
-const BatchProcessor = require('../src/BatchProcessor');
+const ObjectProcessor = require('../src/common/ObjectProcessor');
 const Datastore = require('../src/common/Datastore');
 
-const TRANSFER_TYPE = "TEST_TRANSFER_TYPE";
 const K = require('kpromise');
 const startWith = K.startWith;
 
-describe('BatchProcessor', () => {
 
+describe('Object Processor', () => {
     const MISSING_KEY = "missingKey";
     const EXISTING_KEY = "existingKey";
-
+    const EXISTING_KEY_SIZE = 64;
+    const INTEGRATION_ENDPOINT = "gllApiIntegrationTestEndpoint";
+    const VERIFY_URL_REGEX = new RegExp(`^https?://${INTEGRATION_ENDPOINT}/.*/verify$`);
 
     let processor = null;
     beforeEach(() => {
-        processor = new BatchProcessor(new Datastore(), TRANSFER_TYPE);
+        processor = new ObjectProcessor(new Datastore(), INTEGRATION_ENDPOINT, "/test/resource/path", "unitTest");
     });
 
     afterEach(() => {
         Datastore.mockClear();
     });
 
-    describe('Uploads', () => {
+    describe('uploads', () => {
+
 
         const uploadUrlFor = (key) => "UPLOAD_" + key;
 
@@ -38,39 +40,59 @@ describe('BatchProcessor', () => {
                         if(key === EXISTING_KEY) throw new Error("Should not be uploading this!");
                         if(key === MISSING_KEY) return startWith(uploadUrlFor(key));
                         throw new Error("Unhandled test exception: upload");
-                    }
+                    },
                 }
             });
         });
 
-        it('Should process an upload request.', async() => {
+        afterAll(() => {
+            Datastore.mockRestore();
+        });
+
+        it('should should process valid requests', async() => {
             const given = {oid: MISSING_KEY, size: 5};
 
             const actual = await startWith(given)
-                .then(processor.getUploadDirective);
+                .then(processor.processUpload);
 
-            expect.assertions(4);
+            expect.assertions(5);
             expect(actual.oid).toBe(MISSING_KEY);
             expect(actual.size).toBe(5);
+            console.log(actual);
             expect(actual.error).toBeUndefined();
             expect(actual.actions.upload.href).toMatch(uploadUrlFor(MISSING_KEY));
+            expect(actual.actions.verify.href).toMatch(VERIFY_URL_REGEX);
         });
 
-        it('Should skip uploads for existing objects', async() => {
-            const given = {oid: EXISTING_KEY, size: 5};
+        it('should skip uploads for existing objects', async() => {
+            const given = {oid: EXISTING_KEY, size: EXISTING_KEY_SIZE};
 
             const actual = await startWith(given)
-                .then(processor.getUploadDirective);
+                .then(processor.processUpload);
 
             expect.assertions(4);
             expect(actual.oid).toBe(EXISTING_KEY);
-            expect(actual.size).toBe(5);
+            expect(actual.size).toBe(EXISTING_KEY_SIZE);
             expect(actual.error).toBeUndefined();
             expect(actual.actions).toBeUndefined();
         });
+
+        it('should wrap individual object errors', async() => {
+            const given = {oid: "boom", size: 1};
+
+            const actual = await startWith(given)
+                .then(processor.processUpload);
+
+            expect.assertions(5);
+            expect(actual.oid).toBe("boom");
+            expect(actual.size).toBe(1);
+            expect(actual.actions).toBeUndefined();
+            expect(actual.error.code).toBe(500);
+            expect(actual.error.message).toMatch(/Unhandled test exception/);
+        });
     });
 
-    describe('Downloads', () => {
+    describe('downloads', () => {
         const downloadUrlFor = (key) => "DOWNLOAD_" + key;
 
         beforeAll(() => {
@@ -90,11 +112,11 @@ describe('BatchProcessor', () => {
             });
         });
 
-        it('Should process a download request.', async() => {
+        it('should process valid requests', async() => {
             const given = {oid: EXISTING_KEY, size: 5};
 
             const actual = await startWith(given)
-                .then(processor.getDownloadDirective);
+                .then(processor.processDownload);
 
             expect.assertions(4);
             expect(actual.oid).toBe(EXISTING_KEY);
@@ -103,11 +125,11 @@ describe('BatchProcessor', () => {
             expect(actual.actions.download.href).toBe(downloadUrlFor(EXISTING_KEY));
         });
 
-        it('Should give 404 for missing objects', async() => {
+        it('should give 404 for missing objects', async() => {
             const given = {oid: MISSING_KEY, size: 5};
 
             const actual = await startWith(given)
-                .then(processor.getDownloadDirective);
+                .then(processor.processDownload);
 
             expect.assertions(4);
             expect(actual.oid).toBe(MISSING_KEY);
@@ -115,6 +137,85 @@ describe('BatchProcessor', () => {
             expect(actual.error.code).toBe(404);
             expect(actual.actions).toBeUndefined();
         });
+
+        it('should wrap individual object errors', async() => {
+            const given = {oid: "boom", size: 1};
+
+            const actual = await startWith(given)
+                .then(processor.processDownload);
+
+            expect.assertions(5);
+            expect(actual.oid).toBe("boom");
+            expect(actual.size).toBe(1);
+            expect(actual.actions).toBeUndefined();
+            expect(actual.error.code).toBe(500);
+            expect(actual.error.message).toMatch(/Unhandled test exception/);
+        });
+    });
+
+    describe('Verify', () => {
+
+        beforeAll(() => {
+            Datastore.mockImplementation(() => {
+                return {
+                    exists: (key) => {
+                        if(key === EXISTING_KEY) return startWith(true);
+                        if(key === MISSING_KEY) return startWith(false);
+                        throw new Error("Unhandled test exception: exist");
+                    },
+                    getInfo: (key) => {
+                        if(key === EXISTING_KEY) return startWith({ContentLength: EXISTING_KEY_SIZE});
+                        if(key === MISSING_KEY) return startWith(null);
+                        throw new Error("Unhandled test exception: verify");
+                    }
+                }
+            });
+        });
+
+        afterAll(() => {
+            Datastore.mockRestore();
+        });
+
+        it('Should verify correct object', async() => {
+            const given = {oid: EXISTING_KEY, size: EXISTING_KEY_SIZE};
+
+            const actual = await startWith(given)
+                .then(processor.verify);
+
+            expect.assertions(1);
+            expect(actual).toEqual({
+                result: "Verified",
+                requested: given,
+                found: given
+            });
+        });
+
+        it('Should not verify incorrect object', async() => {
+            const given = {oid: EXISTING_KEY, size: 12};
+
+            const actual = await startWith(given)
+                .then(processor.verify);
+
+            expect.assertions(1);
+            expect(actual).toEqual({
+                result: "WrongSize",
+                requested: given,
+                found: {oid: EXISTING_KEY, size: EXISTING_KEY_SIZE}
+            });
+        })
+
+        it('Should not verify missing object', async() => {
+            const given = {oid: MISSING_KEY, size: EXISTING_KEY_SIZE};
+
+            const actual = await startWith(given)
+                .then(processor.verify);
+
+            expect(actual).toEqual({
+                result: "NotFound",
+                requested: given,
+                found: null
+            });
+        })
     });
 
     describe('Other errors', () => {
@@ -139,7 +240,7 @@ describe('BatchProcessor', () => {
                 const given = {oid: MISSING_KEY, size: 5};
 
                 const actual = await startWith(given)
-                    .then(processor.getUploadDirective);
+                    .then(processor.processUpload);
 
                 expect.assertions(4);
                 expect(actual.oid).toBe(MISSING_KEY);
@@ -168,7 +269,7 @@ describe('BatchProcessor', () => {
                 const given = {oid: MISSING_KEY, size: 5};
 
                 const actual = await startWith(given)
-                    .then(processor.getUploadDirective);
+                    .then(processor.processUpload);
 
                 expect.assertions(4);
                 expect(actual.oid).toBe(MISSING_KEY);
@@ -197,7 +298,7 @@ describe('BatchProcessor', () => {
                 const given = {oid: MISSING_KEY, size: 5};
 
                 const actual = await startWith(given)
-                    .then(processor.getDownloadDirective);
+                    .then(processor.processDownload);
 
                 expect.assertions(4);
                 expect(actual.oid).toBe(MISSING_KEY);

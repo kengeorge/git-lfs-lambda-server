@@ -38,7 +38,7 @@ Resources:
   verifyObject:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: 'cloudrepo-batch'
+      FunctionName: 'cloudrepo-verifyObject'
       Runtime: nodejs6.10
       Timeout: 60
       Handler: verifyObject.handler

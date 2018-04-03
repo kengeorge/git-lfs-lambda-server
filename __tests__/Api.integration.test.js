@@ -89,20 +89,6 @@ describe('GLL API', () => {
             jest.resetModules();
         });
 
-        it('will respond empty to empty', async() => {
-            const given = requestWithBody({});
-
-            await batch.handler(given.event, given.context, callback);
-
-            expect.assertions(4);
-            expect(callback).toHaveBeenCalledTimes(1);
-            expect(callback.mock.calls[0][0]).toBeNull();
-            expect(callback.mock.calls[0][1].statusCode).toBe(200);
-
-            const response = JSON.parse(callback.mock.calls[0][1].body);
-            expect(response.objects).toHaveLength(0);
-        });
-
         it('will provide upload url for new objects and skip exisitng', async() => {
             const given = requestWithBody({
                 operation: "upload",

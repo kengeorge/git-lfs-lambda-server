@@ -2,7 +2,7 @@ const K = require('kpromise');
 const startWith = K.startWith;
 const forEach = K.forEach;
 
-const Handler = require('./common/Handler');
+const Handler = require('./Handler');
 const TRANSFER_TYPE = "basic";
 
 class ObjectHandler extends Handler {

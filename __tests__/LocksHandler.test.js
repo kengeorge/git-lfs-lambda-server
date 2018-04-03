@@ -1,6 +1,6 @@
 jest.mock('../src/common/Locks')
 
-const LockHandler = require('../src/LockHandler');
+const LockHandler = require('../src/common/LockHandler');
 const Locks = require('../src/common/Locks');
 
 describe('LockHandler', () => {

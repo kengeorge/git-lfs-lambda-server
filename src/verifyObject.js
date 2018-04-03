@@ -1,6 +1,6 @@
 "use strict";
 
-const ObjectHandler = require('./ObjectHandler');
+const ObjectHandler = require('./common/ObjectHandler');
 const ObjectProcessor = require('./common/ObjectProcessor');
 const Datastore = require('./common/S3Datastore');
 

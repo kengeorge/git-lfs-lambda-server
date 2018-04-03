@@ -1,5 +1,5 @@
-const Handler = require('./common/Handler');
-const Locks = require('./common/Locks.js')
+const Handler = require('./Handler');
+const Locks = require('./Locks.js')
 
 class VerifyLocksHandler extends Handler {
 

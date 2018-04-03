@@ -1,4 +1,4 @@
-const ObjectHandler = require('../src/ObjectHandler');
+const ObjectHandler = require('../src/common/ObjectHandler');
 const startWith = require('kpromise').startWith;
 
 describe('Object handler', () => {

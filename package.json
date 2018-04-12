@@ -9,9 +9,18 @@
     "type": "git",
     "url": "https://github.com/kengeorge/git-lfs-lambda-server.git"
   },
-  "keywords": [],
+  "keywords": [
+    "git",
+    "git-lfs",
+    "aws",
+    "lambda"
+  ],
   "author": "Ken George <ken@whatever.email>",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kengeorge/git-lfs-lambda-server/issues"
+  },
+  "homepage": "https://github.com/kengeorge/git-lfs-lambda-server#readme",
   "devDependencies": {
     "aws-sdk": "^2.201.0",
     "jest": "^22.4.0",

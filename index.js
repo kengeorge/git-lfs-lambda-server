@@ -1,4 +1,12 @@
 module.exports = {
+    functions: [
+        "batch",
+        "createLock",
+        "deleteLock",
+        "listLocks",
+        "verifyLocks",
+        "verifyObject"
+    ],
     manifest: {
         batch: "src/batch.js",
         createLock: "src/createLock.js",

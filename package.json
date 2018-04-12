@@ -1,6 +1,6 @@
 {
   "name": "git-lfs-lambda-server",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Lambda implementations of Git LFS server spec",
   "scripts": {
     "test": "jest"

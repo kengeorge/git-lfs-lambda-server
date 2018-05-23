@@ -22,8 +22,11 @@
   },
   "homepage": "https://github.com/kengeorge/git-lfs-lambda-server#readme",
   "devDependencies": {
-    "aws-sdk": "^2.201.0",
-    "jest": "^22.4.0",
-    "kpromise": "^1.0.4"
+    "aws-sdk": "^2.243.1",
+    "jest": "^22.4.4",
+    "kpromise": "^1.1.1"
+  },
+  "dependencies": {
+    "npm": "^6.0.1"
   }
 }
